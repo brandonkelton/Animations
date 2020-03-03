@@ -57,4 +57,9 @@
         android:orderInCategory="62"
         android:title="@string/moverotatecolor_anim"
         app:showAsAction="never"/>
+    <item
+        android:id="@+id/toss_animation"
+        android:orderInCategory="65"
+        android:title="@string/toss_anim"
+        app:showAsAction="never"/>
 </menu>

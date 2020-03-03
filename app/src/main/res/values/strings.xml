@@ -12,4 +12,5 @@
     <string name="color_anim">Animate Color Change</string>
     <string name="movecolor_anim">Move and Recolor</string>
     <string name="moverotatecolor_anim">Move and Rotate, Then Color</string>
+    <string name="toss_anim">Toss</string>
 </resources>

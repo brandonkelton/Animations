@@ -76,6 +76,10 @@ class MainActivity : AppCompatActivity() {
                 cb!!.setStyle(ChalkBoard.MOVE_ROTATE_RECOLOR)
                 return true
             }
+            R.id.toss_animation -> {
+                cb!!.setStyle(ChalkBoard.TOSS)
+                return true
+            }
             R.id.action_settings -> {
             }
             else -> {

@@ -6,6 +6,7 @@ package com.example.animations
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -15,18 +16,25 @@ import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.BounceInterpolator
 import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
+import androidx.core.animation.doOnEnd
 
 class ChalkBoard
     (context: Context) : View(context) {
+
+    private var isXySeparate = false
+    private var isMovingX = false
+    private var isMovingY = false
+
     private var displayWidth: Int = 0       //width of screen - initialized in constructor
     private var displayHeight: Int = 0      //height of screen - initialized in constructor
 
     //values to define rectangle placed on screen
-    private var startX = 55.0f  //left-most x-coordinate
-    private var width = 300.0f  //rectangle width
+    private var startX = 50.0f  //left-most x-coordinate
+    private var width = 100.0f  //rectangle width
     private var stopX = startX + width  //right-most x-coordinate
-    private var height = 400.0f  //rectangle height
-    private var top = 100.0f  //y-coordinate of rectangle's top
+    private var height = 100.0f  //rectangle height
+    private var top = 50.0f  //y-coordinate of rectangle's top
     private var bottom = top + height  //y-coordinate of rectangle's bottom
     private var deltaX = 40.0f   //change in x to next rectangle
     private var deltaY = 40.0f   //change in y to next rectangle
@@ -58,7 +66,8 @@ class ChalkBoard
     }
 
     //Called from Activity when animation type is selected from menu
-    fun setStyle(s: Int) {
+    fun setStyle(s: Int, isXySeparate: Boolean = false) {
+        this.isXySeparate = isXySeparate
         style = s
         colorFlag = s == COLOR_ACC || s == MOVE_RECOLOR || s == MOVE_ROTATE_RECOLOR
         moveFlag = s != ROTATE && s != COLOR_ACC
@@ -73,6 +82,8 @@ class ChalkBoard
      */
     fun wander() {
         val anim: ObjectAnimator    //used in many cases below
+        this.isMovingY = true
+        this.isMovingX = true
         if (moveFlag) {
             oldX = startX
             oldY = top
@@ -89,7 +100,7 @@ class ChalkBoard
         }
         when (style) {
             ANIMATOR      // Smooth Move ObjectAnimator
-            -> getObjectAnimator(500, "fraction", 0.0f, 1.0f).start() //local method
+                -> getObjectAnimator(500, "fraction", 0.0f, 1.0f).start() //local method
             RAW   -> {        //no animation - just jump to spot
                 fraction = 1.0f
                 step()
@@ -121,7 +132,7 @@ class ChalkBoard
                 spinMove.start()
             }
             COLOR_ACC     //Animate color change
-            -> getObjectAnimator(800, "currColor", 0.0f, 1.0f).start() //local method
+                -> getObjectAnimator(800, "currColor", 0.0f, 1.0f).start() //local method
             MOVE_RECOLOR -> {
                 val mover = getObjectAnimator(500, "fraction", 0.0f, 1.0f)
                 val recolor = getObjectAnimator(500, "currColor", 0.0f, 1.0f)
@@ -137,6 +148,20 @@ class ChalkBoard
                 atOnce.play(moveguy).with(spinguy)
                 atOnce.play(recolorguy).after(moveguy)
                 atOnce.start()
+            }
+            TOSS -> {
+                this.isMovingY = true
+                this.isMovingX = false
+                val movingVertical = getObjectAnimator(500, "fraction", 0.0f, 1.0f)
+                movingVertical.interpolator = LinearInterpolator()
+                movingVertical.doOnEnd {
+                    this.isMovingY = false
+                    this.isMovingX = true
+                    val movingHorizontal = getObjectAnimator(500, "fraction", 0.0f, 1.0f)
+                    movingHorizontal.interpolator = LinearInterpolator()
+                    movingHorizontal.start()
+                }
+                movingVertical.start()
             }
             else -> {
             }
@@ -198,10 +223,14 @@ class ChalkBoard
 
     //compute values for one step in the animation
     private fun step() {
-        x1 = oldX + fraction * deltaX
-        y1 = oldY + fraction * deltaY
-        x2 = x1 + width
-        y2 = y1 + height
+        if (this.isMovingY) {
+            y1 = oldY + fraction * deltaY
+            y2 = y1 + height
+        }
+        if (this.isMovingX) {
+            x1 = oldX + fraction * deltaX
+            x2 = x1 + width
+        }
         invalidate()
     }
 
@@ -213,7 +242,7 @@ class ChalkBoard
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         paint.color = currColor
-        canvas.drawRect(x1, y1, x2, y2, paint)
+        canvas.drawRoundRect(x1, y1, x2, y2, 20f, 20f, paint)
     }
 
     companion object {  //static stuff
@@ -228,5 +257,6 @@ class ChalkBoard
         const val COLOR_ACC = 11  //Constant to indicate transition color animation
         const val MOVE_RECOLOR = 12  //Constant to indicate move and change color simultaneously
         const val MOVE_ROTATE_RECOLOR = 23  //Constant to indicate move and rotate simultaneously then recolor animation
+        const val TOSS = 24  //Constant to indicate parabola animation
     }
 }
